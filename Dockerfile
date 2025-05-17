@@ -20,17 +20,15 @@ RUN a2enmod rewrite
 # Set working directory
 WORKDIR /var/www
 
-# Download and extract GLPI
 # Copy local GLPI tarball into the container
 COPY glpi-10.0.17.tgz /tmp/
 
-# Extract GLPI from local tarball
+# Extract GLPI and clean up
 RUN tar -xzf /tmp/glpi-10.0.17.tgz -C /var/www && \
     rm /tmp/glpi-10.0.17.tgz
 
-# Move variable files and prepare structure
-RUN mv /var/www/glpi/files /var/lib/glpi && \
-    mkdir -p /var/lib/glpi/{_cache,_cron,_dumps,_graphs,_lock,_pictures,_plugins,_rss,_sessions,_tmp,_uploads} && \
+# Create GLPI data directories and set permissions
+RUN mkdir -p /var/lib/glpi/{_cache,_cron,_dumps,_graphs,_lock,_pictures,_plugins,_rss,_sessions,_tmp,_uploads} && \
     mkdir -p /var/log/glpi && \
     chown -R www-data:www-data /var/lib/glpi /var/log/glpi && \
     chmod -R 775 /var/lib/glpi /var/log/glpi
@@ -42,7 +40,7 @@ define('GLPI_VAR_DIR', '/var/lib/glpi'); \
 define('GLPI_LOG_DIR', '/var/log/glpi'); \
 ?>" > /var/www/config/local_define.php && \
     chown -R www-data:www-data /var/www/config && \
-    chmod -R 755 /var/www/config
+    chmod -R 775 /var/www/config
 
 # Configure downstream.php
 RUN echo "<?php \
@@ -52,10 +50,9 @@ if (file_exists(GLPI_CONFIG_DIR . '/local_define.php')) { \
 } \
 ?>" > /var/www/glpi/inc/downstream.php
 
-
-# Set permissions
+# Set permissions for GLPI
 RUN chown -R www-data:www-data /var/www/glpi && \
-    chmod -R 755 /var/www/glpi
+    chmod -R 775 /var/www/glpi
 
 # PHP configuration
 RUN echo "memory_limit = 256M" > /usr/local/etc/php/conf.d/glpi.ini && \
